@@ -21,7 +21,7 @@ A modern e-commerce platform for eel-based cuisine with both customer-facing fea
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/EelBarDatabase.git
+git clone https://github.com/HUSEYNKHANLI/potomaceels.git
 cd EelBarDatabase
 ```
 
