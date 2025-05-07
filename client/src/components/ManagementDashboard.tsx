@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ReportFilter, SalesMetrics, ItemPopularity, SalesTrend, RecentOrder, MenuItem } from "@/types";
 import { apiRequest } from "@/lib/queryClient";
 import StatCard from "./StatCard";
@@ -11,6 +11,11 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   AreaChart,
   Area,
@@ -72,6 +77,22 @@ export default function ManagementDashboard() {
     queryFn: async () => {
       const res = await apiRequest("GET", `/api/orders/recent/${orderLimit}`);
       return res.json();
+    }
+  });
+  
+  // Get query client for cache invalidation
+  const queryClient = useQueryClient();
+  
+  // Status update mutation
+  const { mutate: updateOrderStatus, isPending: isUpdatingStatus } = useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: number, status: string }) => {
+      const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status });
+      return res.json();
+    },
+    onSuccess: () => {
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["/api/orders/recent"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/sales-metrics"] });
     }
   });
 
@@ -380,9 +401,52 @@ export default function ManagementDashboard() {
                         <td className="py-3 px-4">{formattedItems}</td>
                         <td className="py-3 px-4">{formatCurrency(order.total)}</td>
                         <td className="py-3 px-4">
-                          <span className={`${getStatusBadgeClass(order.status)} px-2 py-1 rounded-full text-xs font-medium`}>
-                            {order.status ? formatOrderStatus(order.status) : 'Unknown'}
-                          </span>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button className={`${getStatusBadgeClass(order.status)} px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity flex items-center`}>
+                                <span>{order.status ? formatOrderStatus(order.status) : 'Unknown'}</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-48 p-2" align="start">
+                              <div className="flex flex-col space-y-1">
+                                <p className="text-sm font-medium mb-1">Update Status</p>
+                                {isUpdatingStatus && (
+                                  <div className="text-xs text-neutral mb-1">Updating...</div>
+                                )}
+                                <button 
+                                  className={`text-left px-2 py-1 text-sm rounded hover:bg-neutral-light ${order.status === 'pending' ? 'bg-yellow-50' : ''}`}
+                                  onClick={() => updateOrderStatus({ orderId: order.id, status: 'pending' })}
+                                  disabled={isUpdatingStatus}
+                                >
+                                  Pending
+                                </button>
+                                <button 
+                                  className={`text-left px-2 py-1 text-sm rounded hover:bg-neutral-light ${order.status === 'preparing' ? 'bg-blue-50' : ''}`}
+                                  onClick={() => updateOrderStatus({ orderId: order.id, status: 'preparing' })}
+                                  disabled={isUpdatingStatus}
+                                >
+                                  Preparing
+                                </button>
+                                <button 
+                                  className={`text-left px-2 py-1 text-sm rounded hover:bg-neutral-light ${order.status === 'in-transit' ? 'bg-indigo-50' : ''}`}
+                                  onClick={() => updateOrderStatus({ orderId: order.id, status: 'in-transit' })}
+                                  disabled={isUpdatingStatus}
+                                >
+                                  In Transit
+                                </button>
+                                <button 
+                                  className={`text-left px-2 py-1 text-sm rounded hover:bg-neutral-light ${order.status === 'delivered' ? 'bg-green-50' : ''}`}
+                                  onClick={() => updateOrderStatus({ orderId: order.id, status: 'delivered' })}
+                                  disabled={isUpdatingStatus}
+                                >
+                                  Delivered
+                                </button>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
                         </td>
                       </tr>
                     );
