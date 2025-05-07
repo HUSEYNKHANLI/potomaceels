@@ -8,10 +8,8 @@ export default function Navbar() {
     <nav className="bg-primary text-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center">
-          <Link href="/">
-            <a className="playfair text-2xl font-bold mr-2">
-              <span className="text-accent">Potomac</span> Eels
-            </a>
+          <Link href="/" className="playfair text-2xl font-bold mr-2">
+            <span className="text-accent">Potomac</span> Eels
           </Link>
         </div>
         <div className="hidden md:flex space-x-6 items-center">
