@@ -3,7 +3,6 @@ import Navbar from "@/components/Navbar";
 import TabSwitcher from "@/components/TabSwitcher";
 import OrderView from "@/components/OrderView";
 import ManagementDashboard from "@/components/ManagementDashboard";
-import Footer from "@/components/Footer";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<"order" | "management">("order");
@@ -13,7 +12,7 @@ export default function Home() {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col">
+    <div className="relative flex flex-col">
       <Navbar />
       <TabSwitcher onTabChange={handleTabChange} activeTab={activeTab} />
       
@@ -22,8 +21,6 @@ export default function Home() {
       ) : (
         <ManagementDashboard />
       )}
-      
-      <Footer />
     </div>
   );
 }
