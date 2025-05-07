@@ -428,7 +428,28 @@ export default function ManagementDashboard() {
         
         {/* Recent Orders Table */}
         <div>
-          <h3 className="text-lg font-medium mb-4">Recent Orders</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium">Recent Orders</h3>
+            <button 
+              onClick={() => {
+                if (showAllOrders) {
+                  setOrderLimit(10);
+                  setShowAllOrders(false);
+                } else {
+                  setOrderLimit(100); // A higher number to fetch more orders
+                  setShowAllOrders(true);
+                }
+                // Force refetch immediately when button is clicked
+                setTimeout(() => {
+                  refetchOrders();
+                }, 100);
+              }}
+              className="px-4 py-2 rounded bg-secondary text-white hover:bg-secondary-light transition-colors text-sm"
+            >
+              {showAllOrders ? "Show Less Orders" : "View All Orders"}
+            </button>
+          </div>
+          
           {ordersLoading ? (
             <div className="text-center py-4">Loading recent orders...</div>
           ) : recentOrders && recentOrders.length > 0 ? (
@@ -445,7 +466,8 @@ export default function ManagementDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentOrders?.map((order) => {
+                  {/* Only show the first 10 orders unless "View All Orders" is clicked */}
+                  {recentOrders?.slice(0, showAllOrders ? undefined : 10).map((order) => {
                     if (!order || !order.customer || !order.items) {
                       return null;
                     }
@@ -523,30 +545,15 @@ export default function ManagementDashboard() {
                   })}
                 </tbody>
               </table>
+              
+              {/* Show order count and pagination information */}
+              <div className="text-sm text-neutral mt-2 px-1">
+                Showing {showAllOrders ? recentOrders.length : Math.min(10, recentOrders.length)} of {recentOrders.length} orders
+              </div>
             </div>
           ) : (
             <div className="text-center py-4">No recent orders found</div>
           )}
-          <div className="mt-4 flex justify-center">
-            <button 
-              onClick={() => {
-                if (showAllOrders) {
-                  setOrderLimit(10);
-                  setShowAllOrders(false);
-                } else {
-                  setOrderLimit(100); // A higher number to fetch more orders
-                  setShowAllOrders(true);
-                }
-                // Force refetch immediately when button is clicked
-                setTimeout(() => {
-                  refetchOrders();
-                }, 100);
-              }}
-              className="px-4 py-2 rounded bg-secondary text-white hover:bg-secondary-light transition-colors"
-            >
-              {showAllOrders ? "Show Less Orders" : "View All Orders"}
-            </button>
-          </div>
         </div>
       </div>
     </div>
