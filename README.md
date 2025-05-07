@@ -126,15 +126,20 @@ If you encounter errors related to drizzle-orm path exports:
 For convenience, you can use the automated setup script to set up and run the application in one command:
 
 ```bash
+chmod +x setup.sh
 ./setup.sh
 ```
 
-This script will:
-1. Install dependencies
-2. Create the .env file
+This script will automatically:
+1. Install all dependencies
+2. Create the .env file with proper configuration
 3. Start Docker container for PostgreSQL
-4. Push database schema
-5. Start the development server
+4. Create and initialize the database schema
+5. Seed sample menu data
+6. Start the development server
+7. Handle port conflicts automatically
+
+No additional commands needed - the application will be running and ready to use immediately after the script completes.
 
 ## Features
 
