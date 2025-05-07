@@ -31,6 +31,8 @@ export default function ManagementDashboard() {
   });
 
   const [selectedMenuItemId, setSelectedMenuItemId] = useState<number | undefined>(undefined);
+  const [showAllOrders, setShowAllOrders] = useState<boolean>(false);
+  const [orderLimit, setOrderLimit] = useState<number>(10);
 
   // Load menu items for filters
   const { data: menuItems } = useQuery<MenuItem[]>({
@@ -66,7 +68,11 @@ export default function ManagementDashboard() {
 
   // Recent orders query
   const { data: recentOrders, isLoading: ordersLoading } = useQuery<RecentOrder[]>({
-    queryKey: ["/api/orders/recent/10"],
+    queryKey: ["/api/orders/recent", orderLimit],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/orders/recent/${orderLimit}`);
+      return res.json();
+    }
   });
 
   // Event handlers for filters
@@ -105,11 +111,26 @@ export default function ManagementDashboard() {
       case "preparing":
         return "bg-blue-100 text-blue-800";
       case "in-transit":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-indigo-100 text-indigo-800";
       case "delivered":
-        return "bg-accent-light text-accent";
+        return "bg-green-100 text-green-800";
       default:
         return "bg-neutral-light text-neutral";
+    }
+  };
+  
+  const formatOrderStatus = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "Pending";
+      case "preparing":
+        return "Preparing";
+      case "in-transit":
+        return "In Transit";
+      case "delivered":
+        return "Delivered";
+      default:
+        return status;
     }
   };
 
@@ -359,8 +380,8 @@ export default function ManagementDashboard() {
                         <td className="py-3 px-4">{formattedItems}</td>
                         <td className="py-3 px-4">{formatCurrency(order.total)}</td>
                         <td className="py-3 px-4">
-                          <span className={`${getStatusBadgeClass(order.status)} px-2 py-1 rounded-full text-xs`}>
-                            {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Unknown'}
+                          <span className={`${getStatusBadgeClass(order.status)} px-2 py-1 rounded-full text-xs font-medium`}>
+                            {order.status ? formatOrderStatus(order.status) : 'Unknown'}
                           </span>
                         </td>
                       </tr>
@@ -373,7 +394,20 @@ export default function ManagementDashboard() {
             <div className="text-center py-4">No recent orders found</div>
           )}
           <div className="mt-4 flex justify-center">
-            <button className="text-secondary hover:text-secondary-light">View All Orders</button>
+            <button 
+              onClick={() => {
+                if (showAllOrders) {
+                  setOrderLimit(10);
+                  setShowAllOrders(false);
+                } else {
+                  setOrderLimit(100); // A higher number to fetch more orders
+                  setShowAllOrders(true);
+                }
+              }}
+              className="px-4 py-2 rounded bg-secondary text-white hover:bg-secondary-light transition-colors"
+            >
+              {showAllOrders ? "Show Less Orders" : "View All Orders"}
+            </button>
           </div>
         </div>
       </div>
