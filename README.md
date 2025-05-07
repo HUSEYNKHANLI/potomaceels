@@ -22,16 +22,38 @@ A modern e-commerce platform for eel-based cuisine with both customer-facing fea
 
 ```bash
 git clone https://github.com/HUSEYNKHANLI/potomaceels.git
-cd EelBarDatabase
+cd potomaceels
 ```
 
-### 2. Install Dependencies
+### 2. Automated Setup (Recommended)
 
+#### For macOS/Linux:
 ```bash
-npm install
+chmod +x setup.sh
+./setup.sh
 ```
 
-### 3. Set Up Environment Variables
+#### For Windows:
+```bash
+setup.bat
+```
+
+The automated setup scripts will:
+1. Install all dependencies (including cross-env for cross-platform compatibility)
+2. Create the .env file with proper configuration
+3. Start Docker container for PostgreSQL
+4. Create and initialize the database schema
+5. Seed sample menu data
+6. Start the development server
+7. Handle port conflicts automatically
+
+No additional commands needed - the application will be running and ready to use immediately after the script completes.
+
+### 3. Manual Setup (Alternative)
+
+If you prefer to set up the application manually, follow these steps:
+
+#### Set Up Environment Variables
 
 Create a `.env` file in the project root with the following content:
 
@@ -49,7 +71,7 @@ PORT=3000
 SESSION_SECRET="your-super-secret-session-key"
 ```
 
-### 4. Set Up Database
+#### Set Up Database
 
 Start a PostgreSQL container using Docker:
 
@@ -59,15 +81,13 @@ docker run --name eelbar-postgres -e POSTGRES_PASSWORD=password -e POSTGRES_DB=e
 
 Wait a few seconds for the database to start up.
 
-### 5. Initialize Database Schema and Seed Data
-
-Push the database schema:
+#### Install Dependencies
 
 ```bash
-npm run db:push
+npm install
 ```
 
-### 6. Start the Development Server
+#### Start the Development Server
 
 ```bash
 npm run dev

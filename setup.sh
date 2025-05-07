@@ -101,9 +101,9 @@ done
 echo ""
 
 # Fix any potential dependency issues
-echo "Installing compatible versions of drizzle packages..."
-npm install drizzle-orm@0.28.6 drizzle-kit@0.19.13 drizzle-zod@0.5.0 pg@8.11.3 @types/pg@8.10.9
-echo "Drizzle packages installed successfully."
+echo "Installing compatible versions of drizzle packages and cross-env..."
+npm install drizzle-orm@0.28.6 drizzle-kit@0.19.13 drizzle-zod@0.5.0 pg@8.11.3 @types/pg@8.10.9 cross-env --save
+echo "Packages installed successfully."
 echo ""
 
 # Update db.ts to use correct PostgreSQL adapter
@@ -456,6 +456,14 @@ echo ""
 # Choose the right port based on our .env configuration
 PORT=$(grep PORT .env | cut -d'=' -f2 | tr -d '"')
 
+# Update package.json to use cross-env for cross-platform compatibility
+echo "Updating package.json for cross-platform compatibility..."
+# Use perl for cross-platform sed-like functionality
+perl -i -pe 's/"dev": "NODE_ENV=development tsx server\/index.ts"/"dev": "cross-env NODE_ENV=development tsx server\/index.ts"/g' package.json
+perl -i -pe 's/"start": "NODE_ENV=production node dist\/index.js"/"start": "cross-env NODE_ENV=production node dist\/index.js"/g' package.json
+echo "Package.json updated for cross-platform compatibility."
+echo ""
+
 # Setup completed
 echo "===== Setup Completed Successfully ====="
 echo ""
@@ -463,10 +471,6 @@ echo ""
 # Start the application
 echo "Starting the application..."
 # Modify package.json to ensure the server listens on the right port
-sed -i.bak "s/\"dev\": \"NODE_ENV=development tsx server\/index.ts\"/\"dev\": \"PORT=$PORT NODE_ENV=development tsx server\/index.ts\"/" package.json
-echo "Updated package.json with correct port configuration."
-
-# Start the app in the background
 npm run dev &
 APP_PID=$!
 
@@ -498,7 +502,7 @@ if [ "$started" = false ]; then
     
     # Try with explicit in-memory storage flag
     echo "Restarting with in-memory storage fallback..."
-    USE_MEM_STORAGE=true PORT=$PORT NODE_ENV=development tsx server/index.ts &
+    USE_MEM_STORAGE=true cross-env PORT=$PORT NODE_ENV=development tsx server/index.ts &
     APP_PID=$!
     
     # Wait again
