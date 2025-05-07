@@ -38,6 +38,13 @@ chmod +x setup.sh
 setup.bat
 ```
 
+The Windows setup script has been improved to:
+1. Properly create environment files in Windows environments
+2. Fix database connection configuration for reliable startup
+3. Handle database creation and initialization properly
+4. Create necessary SQL schema with proper constraints
+5. Verify correct configuration of all components
+
 The automated setup scripts will:
 1. Install all dependencies (including cross-env for cross-platform compatibility)
 2. Create the .env file with proper configuration
@@ -123,6 +130,20 @@ If you encounter Docker connection issues:
    docker rm -f eelbar-postgres
    ```
    And then run the container creation command again.
+
+### Database Connection Issues
+
+If you encounter a database connection error like `DATABASE_URL must be set`:
+
+1. Make sure your `.env` file exists and contains the DATABASE_URL variable
+2. Verify that the PostgreSQL container is running: `docker ps`
+3. Ensure that the database connection check in `server/db.ts` is using the correct condition:
+   ```typescript
+   // This should check if DATABASE_URL is NOT set
+   if (!process.env.DATABASE_URL) {
+     throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
+   }
+   ```
 
 ### WebSocket Connection Errors
 
