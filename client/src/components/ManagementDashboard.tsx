@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ReportFilter, SalesMetrics, ItemPopularity, SalesTrend, RecentOrder, MenuItem } from "@/types";
 import { apiRequest } from "@/lib/queryClient";
@@ -71,17 +71,30 @@ export default function ManagementDashboard() {
     }
   });
 
-  // Recent orders query
-  const { data: recentOrders, isLoading: ordersLoading } = useQuery<RecentOrder[]>({
+  // Get query client for cache invalidation
+  const queryClient = useQueryClient();
+  
+  // Recent orders query with auto-refresh (polling every 30 seconds)
+  const { data: recentOrders, isLoading: ordersLoading, refetch: refetchOrders } = useQuery<RecentOrder[]>({
     queryKey: ["/api/orders/recent", orderLimit],
     queryFn: async () => {
       const res = await apiRequest("GET", `/api/orders/recent/${orderLimit}`);
       return res.json();
-    }
+    },
+    refetchInterval: 30000 // Auto-refresh every 30 seconds
   });
   
-  // Get query client for cache invalidation
-  const queryClient = useQueryClient();
+  // Auto-refresh dashboard data periodically
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      // Refresh all dashboard data
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/sales-metrics"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/item-popularity"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/sales-trend"] });
+    }, 60000); // Refresh every minute
+    
+    return () => clearInterval(refreshInterval);
+  }, [queryClient]);
   
   // Status update mutation
   const { mutate: updateOrderStatus, isPending: isUpdatingStatus } = useMutation({

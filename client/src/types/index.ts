@@ -103,7 +103,16 @@ export interface ReportFilter {
 }
 
 export interface RecentOrder {
-  order: Order;
+  id: number;
+  customerId: number;
+  orderDate: string;
+  scheduledDate?: string | null;
+  deliveryNotes?: string | null;
+  subtotal: number;
+  tax: number;
+  deliveryFee: number;
+  total: number;
+  status: "pending" | "preparing" | "in-transit" | "delivered";
   customer: Customer;
   items: OrderItem[];
 }
