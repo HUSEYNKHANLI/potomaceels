@@ -49,13 +49,7 @@ fi
 echo "Docker is running."
 echo ""
 
-# Install dependencies
-echo "Installing project dependencies..."
-npm install
-echo "Dependencies installed successfully."
-echo ""
-
-# Create .env file
+# Create .env file first so it's available for npm install
 echo "Creating .env file..."
 cat > .env << EOF
 # Database configuration
@@ -71,6 +65,12 @@ PORT=3000
 SESSION_SECRET="eel-bar-super-secret-key-$(date +%s)"
 EOF
 echo ".env file created successfully."
+echo ""
+
+# Install dependencies
+echo "Installing project dependencies..."
+npm install
+echo "Dependencies installed successfully."
 echo ""
 
 # Clean up any existing PostgreSQL container
@@ -358,180 +358,12 @@ EOF
 echo "Routes updated successfully."
 echo ""
 
-# Update storage.ts to use in-memory storage
+# Update storage.ts to ensure in-memory storage implementation is ready
 echo "Ensuring in-memory storage implementation is ready..."
-# This is already done in routes.ts by using MemStorage
+# This is handled by using MemStorage in routes.ts
 
-# Install drizzle-kit globally if not already installed
-echo "Installing drizzle-kit globally..."
-npm install -g drizzle-kit
-echo "drizzle-kit installed globally."
-echo ""
-
-# Create database schema and seed initial data
-echo "Creating database schema..."
-echo "const { sql } = require('drizzle-orm');
-const { db } = require('./server/db');
-const fs = require('fs');
-const path = require('path');
-
-async function pushSchema() {
-  try {
-    // Create menu_items table
-    await db.execute(sql\`
-      CREATE TABLE IF NOT EXISTS menu_items (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        description TEXT,
-        price DECIMAL(10, 2) NOT NULL,
-        category VARCHAR(100) NOT NULL,
-        image_url TEXT,
-        is_available BOOLEAN DEFAULT TRUE
-      )
-    \`);
-    
-    // Create customers table
-    await db.execute(sql\`
-      CREATE TABLE IF NOT EXISTS customers (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        email VARCHAR(255) NOT NULL,
-        phone VARCHAR(20),
-        address TEXT
-      )
-    \`);
-    
-    // Create orders table
-    await db.execute(sql\`
-      CREATE TABLE IF NOT EXISTS orders (
-        id SERIAL PRIMARY KEY,
-        customer_id INTEGER REFERENCES customers(id),
-        order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        scheduled_date TIMESTAMP,
-        delivery_notes TEXT,
-        subtotal DECIMAL(10, 2) NOT NULL,
-        tax DECIMAL(10, 2) NOT NULL,
-        delivery_fee DECIMAL(10, 2) NOT NULL,
-        total DECIMAL(10, 2) NOT NULL,
-        status VARCHAR(50) DEFAULT 'pending'
-      )
-    \`);
-    
-    // Create order_items table
-    await db.execute(sql\`
-      CREATE TABLE IF NOT EXISTS order_items (
-        id SERIAL PRIMARY KEY,
-        order_id INTEGER REFERENCES orders(id),
-        menu_item_id INTEGER REFERENCES menu_items(id),
-        quantity INTEGER NOT NULL,
-        price DECIMAL(10, 2) NOT NULL,
-        special_instructions TEXT
-      )
-    \`);
-    
-    console.log('Database schema created successfully');
-    
-    // Seed menu items
-    const menuItems = [
-      {
-        name: 'Smoked Eel',
-        description: 'Delicate smoked eel fillets with horseradish cream',
-        price: 15.99,
-        category: 'appetizer',
-        image_url: '/images/smoked-eel.jpg',
-        is_available: true
-      },
-      {
-        name: 'Grilled Eel',
-        description: 'Grilled freshwater eel with kabayaki sauce',
-        price: 18.99,
-        category: 'main',
-        image_url: '/images/grilled-eel.jpg',
-        is_available: true
-      },
-      {
-        name: 'Jellied Eel',
-        description: 'Traditional London jellied eel cubes',
-        price: 13.99,
-        category: 'appetizer',
-        image_url: '/images/jellied-eel.jpg',
-        is_available: true
-      },
-      {
-        name: 'Eel Pie',
-        description: 'Classic eel pie with flaky pastry crust',
-        price: 17.99,
-        category: 'main',
-        image_url: '/images/eel-pie.jpg',
-        is_available: true
-      },
-      {
-        name: 'Eel Sushi',
-        description: 'Unagi sushi with cucumber and avocado',
-        price: 16.99,
-        category: 'main',
-        image_url: '/images/eel-sushi.jpg',
-        is_available: true
-      },
-      {
-        name: 'Stewed Eel',
-        description: 'Slow-cooked eel in herbed broth',
-        price: 19.99,
-        category: 'main',
-        image_url: '/images/stewed-eel.jpg',
-        is_available: true
-      },
-      {
-        name: 'Eel Wine',
-        description: 'Traditional fermented eel wine',
-        price: 8.99,
-        category: 'beverage',
-        image_url: '/images/eel-wine.jpg',
-        is_available: true
-      },
-      {
-        name: 'Eel Ice Cream',
-        description: 'Sweet eel-flavored ice cream',
-        price: 6.99,
-        category: 'dessert',
-        image_url: '/images/eel-ice-cream.jpg',
-        is_available: true
-      }
-    ];
-    
-    // Check if menu items exist
-    const existingItems = await db.execute(sql\`SELECT COUNT(*) FROM menu_items\`);
-    const itemCount = parseInt(existingItems.rows[0].count);
-    
-    if (itemCount === 0) {
-      for (const item of menuItems) {
-        await db.execute(sql\`
-          INSERT INTO menu_items (name, description, price, category, image_url, is_available)
-          VALUES (\${item.name}, \${item.description}, \${item.price}, \${item.category}, \${item.image_url}, \${item.is_available})
-        \`);
-      }
-      console.log('Menu items seeded successfully');
-    } else {
-      console.log('Menu items already exist, skipping seed');
-    }
-    
-    // Close connection
-    process.exit(0);
-  } catch (error) {
-    console.error('Error pushing schema:', error);
-    process.exit(1);
-  }
-}
-
-pushSchema();
-" > push-schema.js
-
-node push-schema.js
-echo "Database schema and seed data created successfully."
-echo ""
-
-# Check if port 3000 is in use
-echo "Checking if port 3000 is in use..."
+# Check if port 3000 and 5000 are in use
+echo "Checking for port conflicts..."
 if check_port 3000; then
   echo "Port 3000 is already in use. Let's use port 3001 instead."
   sed -i.bak 's/PORT=3000/PORT=3001/g' .env
@@ -539,45 +371,173 @@ if check_port 3000; then
 else
   echo "Port 3000 is available."
 fi
+
+# Also check for port 5000 which is used in the .replit configuration
+if check_port 5000; then
+  echo "Port 5000 is also in use. This might affect deployment."
+fi
 echo ""
+
+# Create database schema and seed data directly using SQL
+echo "Creating database schema and seeding data..."
+docker exec -i eelbar-postgres psql -U postgres -d eelbar << EOF
+-- Create menu_items table
+CREATE TABLE IF NOT EXISTS menu_items (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  price DECIMAL(10, 2) NOT NULL,
+  category VARCHAR(100) NOT NULL,
+  image_url TEXT,
+  is_available BOOLEAN DEFAULT TRUE
+);
+
+-- Create customers table
+CREATE TABLE IF NOT EXISTS customers (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  phone VARCHAR(20),
+  address TEXT
+);
+
+-- Create orders table
+CREATE TABLE IF NOT EXISTS orders (
+  id SERIAL PRIMARY KEY,
+  customer_id INTEGER REFERENCES customers(id),
+  order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  scheduled_date TIMESTAMP,
+  delivery_notes TEXT,
+  subtotal DECIMAL(10, 2) NOT NULL,
+  tax DECIMAL(10, 2) NOT NULL,
+  delivery_fee DECIMAL(10, 2) NOT NULL,
+  total DECIMAL(10, 2) NOT NULL,
+  status VARCHAR(50) DEFAULT 'pending'
+);
+
+-- Create order_items table
+CREATE TABLE IF NOT EXISTS order_items (
+  id SERIAL PRIMARY KEY,
+  order_id INTEGER REFERENCES orders(id),
+  menu_item_id INTEGER REFERENCES menu_items(id),
+  quantity INTEGER NOT NULL,
+  price DECIMAL(10, 2) NOT NULL,
+  special_instructions TEXT
+);
+
+-- Check if menu_items table is empty
+DO \$\$
+DECLARE
+  item_count INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO item_count FROM menu_items;
+  
+  IF item_count = 0 THEN
+    -- Insert sample menu items
+    INSERT INTO menu_items (name, description, price, category, image_url, is_available) VALUES
+    ('Smoked Eel', 'Delicate smoked eel fillets with horseradish cream', 15.99, 'appetizer', '/images/smoked-eel.jpg', true),
+    ('Grilled Eel', 'Grilled freshwater eel with kabayaki sauce', 18.99, 'main', '/images/grilled-eel.jpg', true),
+    ('Jellied Eel', 'Traditional London jellied eel cubes', 13.99, 'appetizer', '/images/jellied-eel.jpg', true),
+    ('Eel Pie', 'Classic eel pie with flaky pastry crust', 17.99, 'main', '/images/eel-pie.jpg', true),
+    ('Eel Sushi', 'Unagi sushi with cucumber and avocado', 16.99, 'main', '/images/eel-sushi.jpg', true),
+    ('Stewed Eel', 'Slow-cooked eel in herbed broth', 19.99, 'main', '/images/stewed-eel.jpg', true),
+    ('Eel Wine', 'Traditional fermented eel wine', 8.99, 'beverage', '/images/eel-wine.jpg', true),
+    ('Eel Ice Cream', 'Sweet eel-flavored ice cream', 6.99, 'dessert', '/images/eel-ice-cream.jpg', true);
+    
+    RAISE NOTICE 'Menu items seeded successfully';
+  ELSE
+    RAISE NOTICE 'Menu items already exist, skipping seed';
+  END IF;
+END \$\$;
+EOF
+echo "Database schema and seed data created successfully."
+echo ""
+
+# Choose the right port based on our .env configuration
+PORT=$(grep PORT .env | cut -d'=' -f2 | tr -d '"')
 
 # Setup completed
 echo "===== Setup Completed Successfully ====="
 echo ""
 
-# Start the application automatically
+# Start the application
 echo "Starting the application..."
+# Modify package.json to ensure the server listens on the right port
+sed -i.bak "s/\"dev\": \"NODE_ENV=development tsx server\/index.ts\"/\"dev\": \"PORT=$PORT NODE_ENV=development tsx server\/index.ts\"/" package.json
+echo "Updated package.json with correct port configuration."
+
+# Start the app in the background
 npm run dev &
+APP_PID=$!
 
 # Wait for app to start
 echo "Waiting for the application to start..."
-# Choose the right port based on our .env configuration
-PORT=$(grep PORT .env | cut -d'=' -f2 | tr -d '"')
 
 # Wait for the application to start (max 30 seconds)
+started=false
 for i in {1..30}; do
   if curl -s http://localhost:$PORT > /dev/null; then
     echo "Application is now running at http://localhost:$PORT"
+    started=true
     break
   fi
   echo "Waiting for application to start... ($i/30)"
   sleep 1
-  if [ $i -eq 30 ]; then
-    echo "Application did not start in time. Please check the logs."
-    
-    # But don't exit, let the user see the logs
-    # The application may still be starting up
-  fi
 done
 
-echo ""
-echo "===== Eel Bar Database is now ready ====="
-echo "- Frontend: http://localhost:$PORT"
-echo "- API: http://localhost:$PORT/api"
-echo ""
-echo "The application is running in the background."
-echo "Press Ctrl+C to stop watching logs (the app will continue running)."
-echo ""
+if [ "$started" = false ]; then
+  echo "Application did not start successfully in the expected time."
+  echo "Checking for errors..."
+  
+  # Let's give it a little more time and then check if it's still running
+  sleep 5
+  if ps -p $APP_PID > /dev/null; then
+    echo "Process is still running. It may just be taking longer than expected."
+  else
+    echo "The process has terminated. Checking for in-memory storage fallback..."
+    
+    # Try with explicit in-memory storage flag
+    echo "Restarting with in-memory storage fallback..."
+    USE_MEM_STORAGE=true PORT=$PORT NODE_ENV=development tsx server/index.ts &
+    APP_PID=$!
+    
+    # Wait again
+    for i in {1..20}; do
+      if curl -s http://localhost:$PORT > /dev/null; then
+        echo "Application is now running with in-memory storage at http://localhost:$PORT"
+        started=true
+        break
+      fi
+      echo "Waiting for application restart... ($i/20)"
+      sleep 1
+    done
+  fi
+fi
 
-# Show logs, but don't exit if user presses Ctrl+C
-tail -f server/index.js 2>/dev/null || echo "Application is running in the background." 
+echo ""
+if [ "$started" = true ]; then
+  echo "===== Eel Bar Database is now ready ====="
+  echo "- Frontend: http://localhost:$PORT"
+  echo "- API: http://localhost:$PORT/api"
+  echo ""
+  echo "The application is running in the background."
+  echo "Press Ctrl+C to stop watching logs (the app will continue running)."
+  echo ""
+else
+  echo "===== Setup encountered issues ====="
+  echo "The application may still be starting up or may have encountered errors."
+  echo "You can try running the application manually with:"
+  echo "npm run dev"
+  echo "or check for errors in the console output above."
+fi
+
+# Don't use tail -f as it might not exist yet and could cause script to fail
+# Instead, use a loop to display recent logs
+for i in {1..60}; do
+  if [ -f npm-debug.log ]; then
+    echo "Displaying recent npm debug logs:"
+    tail npm-debug.log
+    break
+  fi
+  sleep 1
+done 
