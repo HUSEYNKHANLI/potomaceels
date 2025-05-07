@@ -338,25 +338,29 @@ export default function ManagementDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentOrders.map((orderData) => {
+                  {recentOrders?.map((orderData) => {
+                    if (!orderData || !orderData.order || !orderData.customer || !orderData.items) {
+                      return null;
+                    }
+                    
                     const { order, customer, items } = orderData;
                     const formattedItems = items.map(item => 
-                      `${item.menuItem.name} (${item.quantity})`
+                      `${item.menuItem?.name || 'Unknown Item'} (${item.quantity})`
                     ).join(", ");
                     
-                    const formattedDate = new Date(order.orderDate).toLocaleString();
+                    const formattedDate = order.orderDate ? new Date(order.orderDate).toLocaleString() : 'Unknown Date';
                     const orderId = `#PTE${order.id.toString().padStart(5, '0')}`;
                     
                     return (
                       <tr key={order.id} className="border-b border-neutral-light hover:bg-neutral-light">
                         <td className="py-3 px-4">{orderId}</td>
-                        <td className="py-3 px-4">{customer.name}</td>
+                        <td className="py-3 px-4">{customer.name || 'Unknown Customer'}</td>
                         <td className="py-3 px-4">{formattedDate}</td>
                         <td className="py-3 px-4">{formattedItems}</td>
                         <td className="py-3 px-4">{formatCurrency(order.total)}</td>
                         <td className="py-3 px-4">
                           <span className={`${getStatusBadgeClass(order.status)} px-2 py-1 rounded-full text-xs`}>
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                            {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Unknown'}
                           </span>
                         </td>
                       </tr>
