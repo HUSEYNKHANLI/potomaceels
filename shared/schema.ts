@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, foreignKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // Menu items table
 export const menuItems = pgTable("menu_items", {
@@ -28,7 +29,7 @@ export const customers = pgTable("customers", {
 // Orders table
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
-  customerId: integer("customer_id").notNull(),
+  customerId: integer("customer_id").notNull().references(() => customers.id),
   orderDate: timestamp("order_date").notNull().defaultNow(),
   scheduledDate: timestamp("scheduled_date"),
   deliveryNotes: text("delivery_notes"),
@@ -42,8 +43,8 @@ export const orders = pgTable("orders", {
 // Order items join table
 export const orderItems = pgTable("order_items", {
   id: serial("id").primaryKey(),
-  orderId: integer("order_id").notNull(),
-  menuItemId: integer("menu_item_id").notNull(),
+  orderId: integer("order_id").notNull().references(() => orders.id),
+  menuItemId: integer("menu_item_id").notNull().references(() => menuItems.id),
   quantity: integer("quantity").notNull(),
   price: doublePrecision("price").notNull(),
   specialInstructions: text("special_instructions"),
@@ -91,3 +92,31 @@ export const orderReportFilterSchema = z.object({
 });
 
 export type OrderReportFilter = z.infer<typeof orderReportFilterSchema>;
+
+// Define table relations
+export const menuItemsRelations = relations(menuItems, ({ many }) => ({
+  orderItems: many(orderItems),
+}));
+
+export const customersRelations = relations(customers, ({ many }) => ({
+  orders: many(orders),
+}));
+
+export const ordersRelations = relations(orders, ({ one, many }) => ({
+  customer: one(customers, {
+    fields: [orders.customerId],
+    references: [customers.id],
+  }),
+  orderItems: many(orderItems),
+}));
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderItems.orderId],
+    references: [orders.id],
+  }),
+  menuItem: one(menuItems, {
+    fields: [orderItems.menuItemId],
+    references: [menuItems.id],
+  }),
+}));
