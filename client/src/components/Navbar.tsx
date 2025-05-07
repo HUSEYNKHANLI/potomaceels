@@ -13,9 +13,9 @@ export default function Navbar() {
           </Link>
         </div>
         <div className="hidden md:flex space-x-6 items-center">
-          <a href="#" className="hover:text-accent-light transition">Menu</a>
-          <a href="#" className="hover:text-accent-light transition">About</a>
-          <a href="#" className="hover:text-accent-light transition">Contact</a>
+          <Link href="/" className="hover:text-accent-light transition">Menu</Link>
+          <Link href="/about" className="hover:text-accent-light transition">About</Link>
+          <Link href="/contact" className="hover:text-accent-light transition">Contact</Link>
           <button className="bg-secondary hover:bg-secondary-light px-4 py-2 rounded-md transition">
             Login
           </button>
@@ -32,9 +32,9 @@ export default function Navbar() {
       
       {/* Mobile Menu */}
       <div className={`md:hidden ${isMobileMenuOpen ? 'block' : 'hidden'} bg-primary-light px-4 py-3`}>
-        <a href="#" className="block py-2 hover:text-accent-light transition">Menu</a>
-        <a href="#" className="block py-2 hover:text-accent-light transition">About</a>
-        <a href="#" className="block py-2 hover:text-accent-light transition">Contact</a>
+        <Link href="/" className="block py-2 hover:text-accent-light transition">Menu</Link>
+        <Link href="/about" className="block py-2 hover:text-accent-light transition">About</Link>
+        <Link href="/contact" className="block py-2 hover:text-accent-light transition">Contact</Link>
         <button className="mt-2 w-full bg-secondary hover:bg-secondary-light px-4 py-2 rounded-md transition">
           Login
         </button>
