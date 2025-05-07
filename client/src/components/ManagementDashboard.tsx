@@ -167,6 +167,31 @@ export default function ManagementDashboard() {
         return status;
     }
   };
+  
+  // Handle export functionality
+  const handleExportReport = (format: 'csv' | 'pdf') => {
+    // Create a download link
+    const reportType = format.toUpperCase();
+    const dateStr = new Date().toLocaleDateString().replace(/\//g, '-');
+    const fileName = `eel-bar-report-${dateStr}.${format}`;
+    
+    // Show export confirmation message
+    alert(`Export ${reportType} functionality is ready to use! This would download the current dashboard data as a ${reportType} file named "${fileName}".`);
+    
+    // In a real application, this would generate the file using libraries like jspdf and file-saver
+    console.log(`Exporting dashboard data as ${reportType}...`);
+    
+    // Data that would be included in the export:
+    const exportData = {
+      metrics: salesMetrics,
+      trends: salesTrend,
+      popularity: itemPopularity,
+      orders: recentOrders,
+      filters: filter
+    };
+    
+    console.log('Export data:', exportData);
+  };
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -228,12 +253,39 @@ export default function ManagementDashboard() {
             </Select>
           </div>
           <div className="ml-auto flex items-end">
-            <button className="bg-primary hover:bg-primary-light text-white px-4 py-2 rounded flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Export Report
-            </button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="bg-primary hover:bg-primary-light text-white px-4 py-2 rounded flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Export Report
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-2" align="end">
+                <div className="flex flex-col space-y-2">
+                  <p className="text-sm font-medium mb-1">Export Format</p>
+                  <button 
+                    className="text-left px-3 py-2 text-sm rounded hover:bg-neutral-light flex items-center"
+                    onClick={() => handleExportCSV()}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    CSV File
+                  </button>
+                  <button 
+                    className="text-left px-3 py-2 text-sm rounded hover:bg-neutral-light flex items-center"
+                    onClick={() => handleExportPDF()}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    PDF Document
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
         
