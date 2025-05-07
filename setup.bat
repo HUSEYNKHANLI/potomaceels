@@ -16,20 +16,15 @@ echo.
 
 REM Create .env file
 echo Creating .env file...
-(
-  echo # Database configuration
-  echo DATABASE_URL=postgresql://postgres:password@localhost:5432/eelbar
-  echo.
-  echo # Node environment
-  echo NODE_ENV=development
-  echo.
-  echo # Server port
-  echo PORT=3000
-  echo.
-  echo # Session secret
-  echo SESSION_SECRET=eel-bar-super-secret-key-%RANDOM%
-) > .env
+echo DATABASE_URL=postgresql://postgres:password@localhost:5432/eelbar > .env
+echo NODE_ENV=development >> .env
+echo PORT=3000 >> .env
+echo SESSION_SECRET=eel-bar-super-secret-key-%RANDOM% >> .env
 echo .env file created successfully.
+echo.
+
+REM Display the content of .env file to verify
+type .env
 echo.
 
 REM Install dependencies
@@ -85,10 +80,11 @@ echo Updating database connection configuration...
   echo // Load environment variables from .env file
   echo config();
   echo.
-  echo if (!process.env.DATABASE_URL^) {
+  echo // Check if DATABASE_URL exists - FIXED
+  echo if ^(!process.env.DATABASE_URL^) {
   echo   throw new Error(
   echo     "DATABASE_URL must be set. Did you forget to provision a database?",
-  echo   ^);
+  echo   );
   echo }
   echo.
   echo // Use the Pool class from the pg module
@@ -99,39 +95,36 @@ echo Updating database connection configuration...
 echo Database connection updated successfully.
 echo.
 
+REM Verify the content of db.ts to ensure proper condition
+type server\db.ts
+echo.
+
 REM Update routes.ts to use MemStorage for reliability
 echo Updating routes to use in-memory storage...
-copy /y setup-files\routes.ts server\routes.ts >nul 2>&1
-if %ERRORLEVEL% NEQ 0 (
-  echo Warning: Could not copy routes.ts template. Will create it directly...
-  echo import type { Express, Request, Response } from "express"; > server\routes.ts
-  echo import { createServer, type Server } from "http"; >> server\routes.ts
-  echo import { MemStorage } from "./storage"; >> server\routes.ts
-  echo import { createOrderRequestSchema, orderReportFilterSchema } from "@shared/schema"; >> server\routes.ts
-  echo import { ZodError } from "zod"; >> server\routes.ts
-  echo import { fromZodError } from "zod-validation-error"; >> server\routes.ts
-  echo. >> server\routes.ts
-  echo // Initialize storage with MemStorage for testing >> server\routes.ts
-  echo const storage = new MemStorage(); >> server\routes.ts
-  echo. >> server\routes.ts
-  echo export async function registerRoutes(app: Express^): Promise^<Server^> { >> server\routes.ts
-  echo   // Define all routes >> server\routes.ts
-  echo   app.get("/api/menu-items", async (req: Request, res: Response^) =^> { >> server\routes.ts
-  echo     try { >> server\routes.ts
-  echo       const menuItems = await storage.getMenuItems(); >> server\routes.ts
-  echo       res.json(menuItems^); >> server\routes.ts
-  echo     } catch (error^) { >> server\routes.ts
-  echo       res.status(500^).json({ message: "Failed to fetch menu items" }^); >> server\routes.ts
-  echo     } >> server\routes.ts
-  echo   }^); >> server\routes.ts
-  echo. >> server\routes.ts
-  echo   // Additional routes omitted for brevity >> server\routes.ts
-  echo   // In a real implementation, all routes would be defined here >> server\routes.ts
-  echo. >> server\routes.ts
-  echo   const httpServer = createServer(app^); >> server\routes.ts
-  echo   return httpServer; >> server\routes.ts
-  echo } >> server\routes.ts
-)
+echo import type { Express, Request, Response } from "express"; > server\routes.ts
+echo import { createServer, type Server } from "http"; >> server\routes.ts
+echo import { MemStorage } from "./storage"; >> server\routes.ts
+echo import { createOrderRequestSchema, orderReportFilterSchema } from "@shared/schema"; >> server\routes.ts
+echo import { ZodError } from "zod"; >> server\routes.ts
+echo import { fromZodError } from "zod-validation-error"; >> server\routes.ts
+echo. >> server\routes.ts
+echo // Initialize storage with MemStorage for testing >> server\routes.ts
+echo const storage = new MemStorage(); >> server\routes.ts
+echo. >> server\routes.ts
+echo export async function registerRoutes(app: Express): Promise^<Server^> { >> server\routes.ts
+echo   // Get all menu items >> server\routes.ts
+echo   app.get("/api/menu-items", async (req: Request, res: Response) =^> { >> server\routes.ts
+echo     try { >> server\routes.ts
+echo       const menuItems = await storage.getMenuItems(); >> server\routes.ts
+echo       res.json(menuItems); >> server\routes.ts
+echo     } catch (error) { >> server\routes.ts
+echo       res.status(500).json({ message: "Failed to fetch menu items" }); >> server\routes.ts
+echo     } >> server\routes.ts
+echo   }); >> server\routes.ts
+echo. >> server\routes.ts
+echo   const httpServer = createServer(app); >> server\routes.ts
+echo   return httpServer; >> server\routes.ts
+echo } >> server\routes.ts
 echo Routes updated successfully.
 echo.
 
@@ -140,7 +133,9 @@ echo Checking for port conflicts...
 netstat -ano | findstr :3000 | findstr LISTENING >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
   echo Port 3000 is already in use. Switching to port 3001...
-  powershell -Command "(Get-Content .env) -replace 'PORT=3000', 'PORT=3001' | Set-Content .env"
+  type .env | findstr /v PORT > .env.tmp
+  echo PORT=3001 >> .env.tmp
+  move /y .env.tmp .env >nul
   echo Application will run on port 3001.
 ) else (
   echo Port 3000 is available.
@@ -148,101 +143,97 @@ if %ERRORLEVEL% EQU 0 (
 
 REM Create database schema and seed data directly using SQL
 echo Creating database schema and seeding data...
-(
-  echo -- Create menu_items table
-  echo CREATE TABLE IF NOT EXISTS menu_items (
-  echo   id SERIAL PRIMARY KEY,
-  echo   name VARCHAR(255) NOT NULL,
-  echo   description TEXT,
-  echo   price DECIMAL(10, 2) NOT NULL,
-  echo   category VARCHAR(100) NOT NULL,
-  echo   image_url TEXT,
-  echo   is_available BOOLEAN DEFAULT TRUE
-  echo );
-  echo.
-  echo -- Create customers table
-  echo CREATE TABLE IF NOT EXISTS customers (
-  echo   id SERIAL PRIMARY KEY,
-  echo   name VARCHAR(255) NOT NULL,
-  echo   email VARCHAR(255) NOT NULL,
-  echo   phone VARCHAR(20),
-  echo   address TEXT
-  echo );
-  echo.
-  echo -- Create orders table
-  echo CREATE TABLE IF NOT EXISTS orders (
-  echo   id SERIAL PRIMARY KEY,
-  echo   customer_id INTEGER REFERENCES customers(id),
-  echo   order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  echo   scheduled_date TIMESTAMP,
-  echo   delivery_notes TEXT,
-  echo   subtotal DECIMAL(10, 2) NOT NULL,
-  echo   tax DECIMAL(10, 2) NOT NULL,
-  echo   delivery_fee DECIMAL(10, 2) NOT NULL,
-  echo   total DECIMAL(10, 2) NOT NULL,
-  echo   status VARCHAR(50) DEFAULT 'pending'
-  echo );
-  echo.
-  echo -- Create order_items table
-  echo CREATE TABLE IF NOT EXISTS order_items (
-  echo   id SERIAL PRIMARY KEY,
-  echo   order_id INTEGER REFERENCES orders(id),
-  echo   menu_item_id INTEGER REFERENCES menu_items(id),
-  echo   quantity INTEGER NOT NULL,
-  echo   price DECIMAL(10, 2) NOT NULL,
-  echo   special_instructions TEXT
-  echo );
-  echo.
-  echo -- Check if menu_items table is empty
-  echo DO $$
-  echo DECLARE
-  echo   item_count INTEGER;
-  echo BEGIN
-  echo   SELECT COUNT(*) INTO item_count FROM menu_items;
-  echo.
-  echo   IF item_count = 0 THEN
-  echo     -- Insert sample menu items
-  echo     INSERT INTO menu_items (name, description, price, category, image_url, is_available) VALUES
-  echo     ('Smoked Eel', 'Delicate smoked eel fillets with horseradish cream', 15.99, 'appetizer', '/images/smoked-eel.jpg', true),
-  echo     ('Grilled Eel', 'Grilled freshwater eel with kabayaki sauce', 18.99, 'main', '/images/grilled-eel.jpg', true),
-  echo     ('Jellied Eel', 'Traditional London jellied eel cubes', 13.99, 'appetizer', '/images/jellied-eel.jpg', true),
-  echo     ('Eel Pie', 'Classic eel pie with flaky pastry crust', 17.99, 'main', '/images/eel-pie.jpg', true),
-  echo     ('Eel Sushi', 'Unagi sushi with cucumber and avocado', 16.99, 'main', '/images/eel-sushi.jpg', true),
-  echo     ('Stewed Eel', 'Slow-cooked eel in herbed broth', 19.99, 'main', '/images/stewed-eel.jpg', true),
-  echo     ('Eel Wine', 'Traditional fermented eel wine', 8.99, 'beverage', '/images/eel-wine.jpg', true),
-  echo     ('Eel Ice Cream', 'Sweet eel-flavored ice cream', 6.99, 'dessert', '/images/eel-ice-cream.jpg', true);
-  echo.
-  echo     RAISE NOTICE 'Menu items seeded successfully';
-  echo   ELSE
-  echo     RAISE NOTICE 'Menu items already exist, skipping seed';
-  echo   END IF;
-  echo END $$;
-) > db_init.sql
+echo -- Create menu_items table > db_init.sql
+echo CREATE TABLE IF NOT EXISTS menu_items ( >> db_init.sql
+echo   id SERIAL PRIMARY KEY, >> db_init.sql
+echo   name VARCHAR(255) NOT NULL, >> db_init.sql
+echo   description TEXT, >> db_init.sql
+echo   price DECIMAL(10, 2) NOT NULL, >> db_init.sql
+echo   category VARCHAR(100) NOT NULL, >> db_init.sql
+echo   image_url TEXT, >> db_init.sql
+echo   is_available BOOLEAN DEFAULT TRUE >> db_init.sql
+echo ); >> db_init.sql
+echo. >> db_init.sql
+echo -- Create customers table >> db_init.sql
+echo CREATE TABLE IF NOT EXISTS customers ( >> db_init.sql
+echo   id SERIAL PRIMARY KEY, >> db_init.sql
+echo   name VARCHAR(255) NOT NULL, >> db_init.sql
+echo   email VARCHAR(255) NOT NULL, >> db_init.sql
+echo   phone VARCHAR(20), >> db_init.sql
+echo   address TEXT >> db_init.sql
+echo ); >> db_init.sql
+echo. >> db_init.sql
+echo -- Create orders table >> db_init.sql
+echo CREATE TABLE IF NOT EXISTS orders ( >> db_init.sql
+echo   id SERIAL PRIMARY KEY, >> db_init.sql
+echo   customer_id INTEGER REFERENCES customers(id), >> db_init.sql
+echo   order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, >> db_init.sql
+echo   scheduled_date TIMESTAMP, >> db_init.sql
+echo   delivery_notes TEXT, >> db_init.sql
+echo   subtotal DECIMAL(10, 2) NOT NULL, >> db_init.sql
+echo   tax DECIMAL(10, 2) NOT NULL, >> db_init.sql
+echo   delivery_fee DECIMAL(10, 2) NOT NULL, >> db_init.sql
+echo   total DECIMAL(10, 2) NOT NULL, >> db_init.sql
+echo   status VARCHAR(50) DEFAULT 'pending' >> db_init.sql
+echo ); >> db_init.sql
+echo. >> db_init.sql
+echo -- Create order_items table >> db_init.sql
+echo CREATE TABLE IF NOT EXISTS order_items ( >> db_init.sql
+echo   id SERIAL PRIMARY KEY, >> db_init.sql
+echo   order_id INTEGER REFERENCES orders(id), >> db_init.sql
+echo   menu_item_id INTEGER REFERENCES menu_items(id), >> db_init.sql
+echo   quantity INTEGER NOT NULL, >> db_init.sql
+echo   price DECIMAL(10, 2) NOT NULL, >> db_init.sql
+echo   special_instructions TEXT >> db_init.sql
+echo ); >> db_init.sql
+echo. >> db_init.sql
+echo -- Insert sample menu items if table is empty >> db_init.sql
+echo DO $$ >> db_init.sql
+echo BEGIN >> db_init.sql
+echo   IF NOT EXISTS (SELECT 1 FROM menu_items LIMIT 1) THEN >> db_init.sql
+echo     INSERT INTO menu_items (name, description, price, category, image_url, is_available) VALUES >> db_init.sql
+echo     ('Smoked Eel', 'Delicate smoked eel fillets with horseradish cream', 15.99, 'appetizer', '/images/smoked-eel.jpg', true), >> db_init.sql
+echo     ('Grilled Eel', 'Grilled freshwater eel with kabayaki sauce', 18.99, 'main', '/images/grilled-eel.jpg', true), >> db_init.sql
+echo     ('Jellied Eel', 'Traditional London jellied eel cubes', 13.99, 'appetizer', '/images/jellied-eel.jpg', true), >> db_init.sql
+echo     ('Eel Pie', 'Classic eel pie with flaky pastry crust', 17.99, 'main', '/images/eel-pie.jpg', true), >> db_init.sql
+echo     ('Eel Sushi', 'Unagi sushi with cucumber and avocado', 16.99, 'main', '/images/eel-sushi.jpg', true), >> db_init.sql
+echo     ('Stewed Eel', 'Slow-cooked eel in herbed broth', 19.99, 'main', '/images/stewed-eel.jpg', true), >> db_init.sql
+echo     ('Eel Wine', 'Traditional fermented eel wine', 8.99, 'beverage', '/images/eel-wine.jpg', true), >> db_init.sql
+echo     ('Eel Ice Cream', 'Sweet eel-flavored ice cream', 6.99, 'dessert', '/images/eel-ice-cream.jpg', true); >> db_init.sql
+echo   END IF; >> db_init.sql
+echo END $$; >> db_init.sql
 
+REM Create eelbar database if it doesn't exist
+echo Creating eelbar database if it doesn't exist...
+docker exec -i eelbar-postgres psql -U postgres -c "CREATE DATABASE eelbar;" >nul 2>&1
+
+REM Execute DB init script
+echo Running database initialization script...
+timeout /t 5 >nul
 docker exec -i eelbar-postgres psql -U postgres -d eelbar < db_init.sql
-del db_init.sql
-echo Database schema and seed data created successfully.
+echo Database schema created successfully.
 echo.
 
 REM Update package.json to ensure cross-platform compatibility
 echo Updating package.json for cross-platform compatibility...
-powershell -Command "(Get-Content package.json) -replace '\"dev\": \"NODE_ENV=development tsx server/index.ts\"', '\"dev\": \"cross-env NODE_ENV=development tsx server/index.ts\"' | Set-Content package.json"
 call npm install --save-dev cross-env
 echo Package.json updated for cross-platform compatibility.
 echo.
-
-REM Get PORT from .env file
-set PORT=3000
-for /f "tokens=2 delims==" %%a in ('findstr PORT .env') do set PORT=%%a
-set PORT=%PORT:"=%
 
 REM Setup completed
 echo ===== Setup Completed Successfully =====
 echo.
 
+REM Get the correct port from .env file
+set PORT=3000
+for /f "tokens=2 delims==" %%a in ('findstr PORT .env') do set PORT=%%a
+set PORT=%PORT:"=%
+echo PORT=%PORT%
+echo.
+
 REM Start the application
 echo Starting the application...
-start cmd /c "npm run dev"
+npm run dev
 
 REM Wait for app to start
 echo Waiting for the application to start...
