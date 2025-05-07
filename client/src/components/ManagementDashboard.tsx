@@ -393,23 +393,28 @@ export default function ManagementDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentOrders?.map((orderData) => {
-                    if (!orderData || !orderData.order || !orderData.customer || !orderData.items) {
+                  {recentOrders?.map((order) => {
+                    if (!order || !order.customer || !order.items) {
                       return null;
                     }
                     
-                    const { order, customer, items } = orderData;
-                    const formattedItems = items.map(item => 
+                    const formattedItems = order.items.map(item => 
                       `${item.menuItem?.name || 'Unknown Item'} (${item.quantity})`
                     ).join(", ");
                     
-                    const formattedDate = order.orderDate ? new Date(order.orderDate).toLocaleString() : 'Unknown Date';
-                    const orderId = `#PTE${order.id.toString().padStart(5, '0')}`;
+                    const formattedDate = order.orderDate ? new Date(order.orderDate).toLocaleString('en-US', {
+                      year: 'numeric', 
+                      month: 'short', 
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    }) : 'Unknown Date';
+                    const orderId = `#EEL${order.id.toString().padStart(4, '0')}`;
                     
                     return (
-                      <tr key={order.id} className="border-b border-neutral-light hover:bg-neutral-light">
+                      <tr key={order.id} className="border-b border-neutral-light hover:bg-gray-50">
                         <td className="py-3 px-4">{orderId}</td>
-                        <td className="py-3 px-4">{customer.name || 'Unknown Customer'}</td>
+                        <td className="py-3 px-4">{order.customer.name || 'Unknown Customer'}</td>
                         <td className="py-3 px-4">{formattedDate}</td>
                         <td className="py-3 px-4">{formattedItems}</td>
                         <td className="py-3 px-4">{formatCurrency(order.total)}</td>
@@ -480,6 +485,10 @@ export default function ManagementDashboard() {
                   setOrderLimit(100); // A higher number to fetch more orders
                   setShowAllOrders(true);
                 }
+                // Force refetch immediately when button is clicked
+                setTimeout(() => {
+                  refetchOrders();
+                }, 100);
               }}
               className="px-4 py-2 rounded bg-secondary text-white hover:bg-secondary-light transition-colors"
             >
