@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { formatCurrency } from "@/lib/utils";
 import { OrderResponse } from "@/types";
 import { useQuery } from "@tanstack/react-query";
+import { eventBus, EVENT_NEW_ORDER } from "@/lib/events";
 
 interface OrderConfirmationProps {
   orderId: number;
@@ -14,6 +15,15 @@ export default function OrderConfirmation({ orderId, onNewOrder }: OrderConfirma
     refetchInterval: false,
     refetchOnWindowFocus: false,
   });
+  
+  // Notify the dashboard about the new order
+  useEffect(() => {
+    if (orderData) {
+      // Publish event to notify other components about the new order
+      eventBus.publish(EVENT_NEW_ORDER, orderData);
+      console.log('Publishing new order event:', orderId);
+    }
+  }, [orderData, orderId]);
 
   const estimatedDelivery = () => {
     const now = new Date();

@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ReportFilter, SalesMetrics, ItemPopularity, SalesTrend, RecentOrder, MenuItem } from "@/types";
 import { apiRequest } from "@/lib/queryClient";
 import StatCard from "./StatCard";
 import { formatCurrency } from "@/lib/utils";
+import { eventBus, EVENT_NEW_ORDER, EVENT_ORDER_STATUS_UPDATED } from "@/lib/events";
 import { 
   Select, 
   SelectContent, 
@@ -96,16 +97,55 @@ export default function ManagementDashboard() {
     return () => clearInterval(refreshInterval);
   }, [queryClient]);
   
+  // Handle automatic refresh when new orders are created
+  const refreshAllData = useCallback(() => {
+    console.log('Real-time update: New order detected! Refreshing dashboard data...');
+    
+    // Refresh all dashboard data immediately
+    queryClient.invalidateQueries({ queryKey: ["/api/orders/recent"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/reports/sales-metrics"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/reports/item-popularity"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/reports/sales-trend"] });
+    
+    // Also trigger a manual refetch of orders
+    refetchOrders();
+  }, [queryClient, refetchOrders]);
+  
+  // Subscribe to new order events
+  useEffect(() => {
+    // Subscribe to the new order event
+    const unsubscribe = eventBus.subscribe(EVENT_NEW_ORDER, (orderData) => {
+      refreshAllData();
+    });
+    
+    // Subscribe to order status updates as well
+    const unsubscribeStatus = eventBus.subscribe(EVENT_ORDER_STATUS_UPDATED, () => {
+      refreshAllData();
+    });
+    
+    // Clean up subscriptions when component unmounts
+    return () => {
+      unsubscribe();
+      unsubscribeStatus();
+    };
+  }, [refreshAllData]);
+  
   // Status update mutation
   const { mutate: updateOrderStatus, isPending: isUpdatingStatus } = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: number, status: string }) => {
       const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       // Invalidate queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ["/api/orders/recent"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reports/sales-metrics"] });
+      
+      // Publish event for real-time updates
+      eventBus.publish(EVENT_ORDER_STATUS_UPDATED, {
+        orderId: variables.orderId,
+        status: variables.status
+      });
     }
   });
 
