@@ -1,0 +1,218 @@
+# Eel Bar Database
+
+A modern e-commerce platform for eel-based cuisine with both customer-facing features for placing orders and an administrative dashboard for viewing sales data and managing orders.
+
+## System Requirements
+
+- **Node.js**: v18.x or higher (v20.x recommended)
+- **npm**: v9.x or higher
+- **Docker**: Latest version for running PostgreSQL
+- **Git**: For cloning the repository
+
+## Project Structure
+
+- **client**: Frontend React application
+- **server**: Backend Express API
+- **shared**: Shared code between client and server
+- **.env**: Environment configuration
+
+## Local Development Setup
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/yourusername/EelBarDatabase.git
+cd EelBarDatabase
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Set Up Environment Variables
+
+Create a `.env` file in the project root with the following content:
+
+```
+# Database configuration
+DATABASE_URL="postgresql://postgres:password@localhost:5432/eelbar"
+
+# Node environment
+NODE_ENV=development
+
+# Server port
+PORT=3000
+
+# Session secret
+SESSION_SECRET="your-super-secret-session-key"
+```
+
+### 4. Set Up Database
+
+Start a PostgreSQL container using Docker:
+
+```bash
+docker run --name eelbar-postgres -e POSTGRES_PASSWORD=password -e POSTGRES_DB=eelbar -p 5432:5432 -d postgres:14
+```
+
+Wait a few seconds for the database to start up.
+
+### 5. Initialize Database Schema and Seed Data
+
+Push the database schema:
+
+```bash
+npm run db:push
+```
+
+### 6. Start the Development Server
+
+```bash
+npm run dev
+```
+
+The application will be available at:
+- Frontend: http://localhost:3000
+- API: http://localhost:3000/api
+
+## Common Issues and Troubleshooting
+
+### Address Already in Use Error
+
+If you encounter an error like `Error: listen EADDRINUSE: address already in use :::3000`, it means the port is already being used. You can:
+
+1. Change the PORT in the `.env` file to another value (e.g., 3001)
+2. Find and stop the process using port 3000:
+   ```bash
+   lsof -i :3000
+   kill -9 <PID>
+   ```
+
+### Docker Related Issues
+
+If you encounter Docker connection issues:
+
+1. Make sure Docker is running
+   ```bash
+   docker ps
+   ```
+2. If PostgreSQL container fails to start, try:
+   ```bash
+   docker rm -f eelbar-postgres
+   ```
+   And then run the container creation command again.
+
+### WebSocket Connection Errors
+
+If you encounter WebSocket connection errors during database operations:
+
+1. Try using the Node PostgreSQL adapter instead of Neon:
+   - The project has been configured to use pg adapter with the local database.
+
+### Package Path Export Errors
+
+If you encounter errors related to drizzle-orm path exports:
+
+1. The project has been updated to use compatible versions.
+2. If issues persist, try:
+   ```bash
+   npm install drizzle-orm@0.28.6 drizzle-kit@0.19.13 drizzle-zod@0.5.0
+   ```
+
+## Automated Setup Script
+
+For convenience, you can use the automated setup script to set up and run the application in one command:
+
+```bash
+./setup.sh
+```
+
+This script will:
+1. Install dependencies
+2. Create the .env file
+3. Start Docker container for PostgreSQL
+4. Push database schema
+5. Start the development server
+
+## Features
+
+### Customer Features
+- Browse eel dishes and beverages
+- Add items to cart
+- Complete checkout process
+- View order confirmations
+
+### Management Features
+- View sales metrics
+- View item popularity reports
+- Track sales trends
+- Manage order status
+- Export reports as CSV or PDF
+
+## Technology Stack
+
+- **Frontend**: React, TypeScript, TailwindCSS, React Query
+- **Backend**: Express.js, TypeScript
+- **Database**: PostgreSQL with Drizzle ORM
+- **Containerization**: Docker
+- **Report Generation**: jsPDF, file-saver 
+
+## GitHub Deployment Guide
+
+### Preparing Your Repository
+
+1. Create a new GitHub repository
+2. Initialize Git in your local project (if not already done):
+   ```bash
+   git init
+   ```
+3. Add your files to Git:
+   ```bash
+   git add .
+   ```
+4. Commit your files:
+   ```bash
+   git commit -m "Initial commit"
+   ```
+5. Add your GitHub repository as a remote:
+   ```bash
+   git remote add origin https://github.com/yourusername/your-repo-name.git
+   ```
+6. Push your code to GitHub:
+   ```bash
+   git push -u origin main
+   ```
+
+### Environment Configuration
+
+Before deploying or sharing your code:
+
+1. Make sure sensitive information is stored in environment variables
+2. Never commit your `.env` file - it's already in the `.gitignore`
+3. Use the `.env.example` file format when sharing required environment variables
+
+### Deployment Options
+
+1. **Render**: Set up database and web service
+2. **Vercel**: Deploy frontend with backend API routes
+3. **Railway**: Deploy PostgreSQL and web service
+4. **Fly.io**: Deploy containerized app with PostgreSQL
+
+For all deployment options, you'll need to:
+1. Set up the appropriate environment variables
+2. Configure the database connection
+3. Run build scripts as defined in package.json
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details 

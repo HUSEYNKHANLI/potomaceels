@@ -1,0 +1,33 @@
+# Node.js runtime
+# Required Node.js version: v18.x or higher (v20.x recommended)
+
+# Core dependencies
+express@4.21.2
+drizzle-orm@0.28.6
+drizzle-kit@0.19.13
+drizzle-zod@0.5.0
+pg@8.11.3
+@types/pg@8.10.9
+zod@3.24.4
+zod-validation-error@3.4.1
+ts-node@10.9.2
+tsx@4.19.1
+typescript@5.6.3
+dotenv@16.4.5
+
+# React and related
+react@18.3.1
+react-dom@18.3.1
+@tanstack/react-query@5.75.5
+wouter@3.7.0
+
+# UI libraries
+tailwindcss@3.4.17
+@radix-ui/react-dialog@1.1.7
+@radix-ui/react-popover@1.1.7
+jspdf@3.0.1
+file-saver@2.0.5
+
+# Required system dependencies
+# Docker - Latest version
+# PostgreSQL (via Docker) - v14 

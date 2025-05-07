@@ -671,14 +671,4 @@ export class DatabaseStorage implements IStorage {
 }
 
 // Initialize storage with database implementation
-// Initialize storage with database implementation
 export const storage = new DatabaseStorage();
-
-// Ensure the storage is properly initialized before use
-try {
-  // Test the database connection
-  db.select().from(schema.menuItems).limit(1);
-  console.log("Storage initialized successfully");
-} catch (error) {
-  console.error("Error initializing storage:", error);
-}

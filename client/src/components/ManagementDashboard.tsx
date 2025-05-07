@@ -29,6 +29,8 @@ import {
   ResponsiveContainer,
   Legend
 } from "recharts";
+import { jsPDF } from "jspdf";
+import { saveAs } from "file-saver";
 
 export default function ManagementDashboard() {
   const [filter, setFilter] = useState<ReportFilter>({
@@ -210,28 +212,179 @@ export default function ManagementDashboard() {
   
   // Handle export functionality
   const handleExportReport = (format: 'csv' | 'pdf') => {
-    // Create a download link
-    const reportType = format.toUpperCase();
     const dateStr = new Date().toLocaleDateString().replace(/\//g, '-');
     const fileName = `eel-bar-report-${dateStr}.${format}`;
     
-    // Show export confirmation message
-    alert(`Export ${reportType} functionality is ready to use! This would download the current dashboard data as a ${reportType} file named "${fileName}".`);
-    
-    // In a real application, this would generate the file using libraries like jspdf and file-saver
-    console.log(`Exporting dashboard data as ${reportType}...`);
-    
-    // Data that would be included in the export:
+    // Prepare data for export
     const exportData = {
       metrics: salesMetrics,
       trends: salesTrend,
       popularity: itemPopularity,
-      orders: recentOrders,
+      orders: recentOrders?.slice(0, 10),
       filters: filter
     };
     
-    console.log('Export data:', exportData);
+    if (format === 'csv') {
+      // Generate CSV content
+      let csvContent = "data:text/csv;charset=utf-8,";
+      
+      // Add report header
+      csvContent += "Eel Bar Sales Report\r\n";
+      csvContent += `Generated on: ${new Date().toLocaleDateString()}\r\n\r\n`;
+      
+      // Add filter information
+      csvContent += "Filter Settings\r\n";
+      csvContent += `Date Range: ${filter.dateRange || 'All Time'}\r\n`;
+      csvContent += `Category: ${filter.category || 'All'}\r\n`;
+      csvContent += `Menu Item: ${selectedMenuItemId ? menuItems?.find(item => item.id === selectedMenuItemId)?.name : 'All'}\r\n\r\n`;
+      
+      // Add sales metrics
+      if (salesMetrics) {
+        csvContent += "Sales Metrics\r\n";
+        csvContent += `Total Revenue,${salesMetrics.totalRevenue}\r\n`;
+        csvContent += `Total Orders,${salesMetrics.totalOrders}\r\n`;
+        csvContent += `Average Order Value,${salesMetrics.averageOrderValue}\r\n`;
+        csvContent += `Top Selling Item,${salesMetrics.topSellingItem?.menuItem.name || 'N/A'}\r\n`;
+        csvContent += `Top Item Quantity,${salesMetrics.topSellingItem?.quantity || 0}\r\n\r\n`;
+      }
+      
+      // Add sales trend data
+      if (salesTrend && salesTrend.length > 0) {
+        csvContent += "Sales Trend\r\n";
+        csvContent += "Date,Revenue\r\n";
+        
+        salesTrend.forEach(day => {
+          csvContent += `${day.date},${day.revenue}\r\n`;
+        });
+        csvContent += "\r\n";
+      }
+      
+      // Add item popularity data
+      if (itemPopularity && itemPopularity.length > 0) {
+        csvContent += "Item Popularity\r\n";
+        csvContent += "Menu Item,Quantity,Category\r\n";
+        
+        itemPopularity.forEach(item => {
+          csvContent += `${item.menuItem.name},${item.quantity},${item.menuItem.category}\r\n`;
+        });
+        csvContent += "\r\n";
+      }
+      
+      // Add recent orders data
+      if (recentOrders && recentOrders.length > 0) {
+        csvContent += "Recent Orders\r\n";
+        csvContent += "Order ID,Customer,Date,Status,Total\r\n";
+        
+        recentOrders.slice(0, 10).forEach(order => {
+          const orderId = `EEL${order.id.toString().padStart(4, '0')}`;
+          const customerName = order.customer?.name || 'Unknown';
+          const orderDate = order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'Unknown';
+          csvContent += `${orderId},${customerName},${orderDate},${order.status},${order.total}\r\n`;
+        });
+      }
+      
+      // Create a download link and trigger download
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+    } else if (format === 'pdf') {
+      // Generate PDF using jsPDF
+      const doc = new jsPDF();
+      
+      // Add report header
+      doc.setFontSize(18);
+      doc.text("Eel Bar Sales Report", 14, 20);
+      
+      doc.setFontSize(11);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+      
+      // Add filter information
+      doc.setFontSize(14);
+      doc.text("Filter Settings", 14, 40);
+      
+      doc.setFontSize(10);
+      const dateRangeText = `Date Range: ${filter.dateRange || 'All Time'}`;
+      const categoryText = `Category: ${filter.category || 'All'}`;
+      const menuItemText = `Menu Item: ${selectedMenuItemId ? menuItems?.find(item => item.id === selectedMenuItemId)?.name : 'All'}`;
+      
+      doc.text(dateRangeText, 14, 50);
+      doc.text(categoryText, 14, 55);
+      doc.text(menuItemText, 14, 60);
+      
+      // Add sales metrics
+      if (salesMetrics) {
+        doc.setFontSize(14);
+        doc.text("Sales Metrics", 14, 70);
+        
+        doc.setFontSize(10);
+        doc.text(`Total Revenue: ${formatCurrency(salesMetrics.totalRevenue)}`, 14, 80);
+        doc.text(`Total Orders: ${salesMetrics.totalOrders}`, 14, 85);
+        doc.text(`Average Order Value: ${formatCurrency(salesMetrics.averageOrderValue)}`, 14, 90);
+        
+        if (salesMetrics.topSellingItem) {
+          doc.text(`Top Selling Item: ${salesMetrics.topSellingItem.menuItem.name} (${salesMetrics.topSellingItem.quantity} units)`, 14, 95);
+        }
+      }
+      
+      // Add sales trend summary
+      if (salesTrend && salesTrend.length > 0) {
+        doc.setFontSize(14);
+        doc.text("Sales Trend Summary", 14, 105);
+        
+        doc.setFontSize(10);
+        const firstDate = new Date(salesTrend[0].date).toLocaleDateString();
+        const lastDate = new Date(salesTrend[salesTrend.length - 1].date).toLocaleDateString();
+        const totalRevenue = salesTrend.reduce((sum, day) => sum + day.revenue, 0);
+        
+        doc.text(`Period: ${firstDate} to ${lastDate}`, 14, 115);
+        doc.text(`Total Revenue: ${formatCurrency(totalRevenue)}`, 14, 120);
+      }
+      
+      // Add item popularity data (top 5 items)
+      if (itemPopularity && itemPopularity.length > 0) {
+        doc.setFontSize(14);
+        doc.text("Top Items by Popularity", 14, 130);
+        
+        doc.setFontSize(10);
+        let yPos = 140;
+        itemPopularity.slice(0, 5).forEach((item, index) => {
+          doc.text(`${index + 1}. ${item.menuItem.name} - ${item.quantity} units`, 14, yPos);
+          yPos += 5;
+        });
+      }
+      
+      // Add recent orders summary
+      if (recentOrders && recentOrders.length > 0) {
+        doc.setFontSize(14);
+        doc.text("Recent Orders Summary", 14, 170);
+        
+        doc.setFontSize(10);
+        let yPos = 180;
+        recentOrders.slice(0, 5).forEach(order => {
+          const orderId = `#EEL${order.id.toString().padStart(4, '0')}`;
+          const formattedDate = order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'Unknown';
+          doc.text(`${orderId} - ${formatCurrency(order.total)} - ${formattedDate} - ${formatOrderStatus(order.status)}`, 14, yPos);
+          yPos += 5;
+        });
+      }
+      
+      // Save PDF file
+      doc.save(fileName);
+    }
   };
+
+  const [displayOrders, setDisplayOrders] = useState<RecentOrder[]>([]);
+
+  useEffect(() => {
+    if (recentOrders) {
+      setDisplayOrders(recentOrders);
+    }
+  }, [recentOrders]);
 
   return (
     <div className="container mx-auto px-4 py-6">
