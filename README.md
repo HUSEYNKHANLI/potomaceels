@@ -16,6 +16,23 @@ A modern e-commerce platform for eel-based cuisine with both customer-facing fea
 - **shared**: Shared code between client and server
 - **.env**: Environment configuration
 
+## Recent Updates and Fixes
+
+### 1. Fixed JSON Parsing Error on Order Submission
+Fixed the "Unexpected token '<', '<!DOCTYPE '... is not valid JSON" error:
+- Improved client-side error handling in CheckoutForm.tsx
+- Enhanced apiRequest function to detect and handle HTML responses gracefully
+- Added proper error handling for non-JSON responses
+
+### 2. Server Endpoint Improvements
+- Added missing `/api/orders` endpoint to server/routes.ts
+- Improved error handling in API responses
+- Ensured proper content-type for all API responses
+
+### 3. Database Connection Handling
+- Fixed the database connection check in server/db.ts
+- Enhanced error messages for database connectivity issues
+
 ## Local Development Setup
 
 ### 1. Clone the Repository
@@ -161,6 +178,21 @@ If you encounter errors related to drizzle-orm path exports:
    ```bash
    npm install drizzle-orm@0.28.6 drizzle-kit@0.19.13 drizzle-zod@0.5.0
    ```
+
+## Deployment Script for Windows
+
+For a quick production deployment on Windows systems, use the provided deployment script:
+
+```bash
+deploy.bat
+```
+
+This script will:
+1. Build the project for production
+2. Check for database connection configuration
+3. Start the application in production mode
+
+The application will be available at http://localhost:3000 after running the script.
 
 ## Automated Setup Script
 
