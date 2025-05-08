@@ -28,7 +28,7 @@ async function seed() {
       price: 14.99,
       category: "eel",
       type: "jellied",
-      imageUrl: "https://pixabay.com/get/ga7e92ab9fbe689c06eca914bb9598c9b3f300ba881df97fbf27f7e347cf93a9d8a11085a314444337657b31bcf58f38a5f303a8a251571b6d3531eb8939d50e8_1280.jpg",
+      imageUrl: "https://miro.medium.com/v2/resize:fit:720/format:webp/1*NAh9243Gld1lLlaFGKrOKQ.jpeg",
     },
     {
       name: "Grilled Eel",
@@ -80,7 +80,7 @@ async function seed() {
       price: 8.99,
       category: "beverage",
       type: "sake",
-      imageUrl: "https://pixabay.com/get/g9510921fe96bfaca38863a491ecf287b5a4a2645cd86d63be549d8caedc1a8b183733abc58a0eb9b26d21e523d6cfce5ae667236078a84fe4b4f74b038ec4071_1280.jpg",
+      imageUrl: "https://images.squarespace-cdn.com/content/v1/58fd82dbbf629ab224f81b68/d2f10916-30d6-4441-8d84-2b8060ef1474/Hot-Sake.jpg?format=2500w",
     },
   ];
 
