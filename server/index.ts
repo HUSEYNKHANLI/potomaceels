@@ -51,12 +51,35 @@ app.use((req, res, next) => {
   
   const server = await registerRoutes(app);
 
+  // Error handling middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    console.error('Server error:', err);
+    
+    // Handle Zod validation errors
+    if (err.name === 'ZodError') {
+      return res.status(400).json({
+        message: 'Validation error',
+        errors: err.errors
+      });
+    }
+    
+    // Handle database errors
+    if (err.code === '23505') { // Unique violation
+      return res.status(409).json({
+        message: 'A record with this information already exists'
+      });
+    }
+    
+    // Handle other errors
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
+    
     res.status(status).json({ message });
-    throw err;
+  });
+
+  // 404 handler for API routes
+  app.use('/api/*', (_req: Request, res: Response) => {
+    res.status(404).json({ message: 'API endpoint not found' });
   });
 
   // importantly only setup vite in development and after

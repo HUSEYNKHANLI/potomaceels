@@ -99,48 +99,6 @@ REM Verify the content of db.ts to ensure proper condition
 type server\db.ts
 echo.
 
-REM Update routes.ts to use MemStorage for reliability
-echo Updating routes to use in-memory storage...
-echo import type { Express, Request, Response } from "express"; > server\routes.ts
-echo import { createServer, type Server } from "http"; >> server\routes.ts
-echo import { MemStorage } from "./storage"; >> server\routes.ts
-echo import { createOrderRequestSchema, orderReportFilterSchema } from "@shared/schema"; >> server\routes.ts
-echo import { ZodError } from "zod"; >> server\routes.ts
-echo import { fromZodError } from "zod-validation-error"; >> server\routes.ts
-echo. >> server\routes.ts
-echo // Initialize storage with MemStorage for testing >> server\routes.ts
-echo const storage = new MemStorage(); >> server\routes.ts
-echo. >> server\routes.ts
-echo export async function registerRoutes(app: Express): Promise^<Server^> { >> server\routes.ts
-echo   // Get all menu items >> server\routes.ts
-echo   app.get("/api/menu-items", async (req: Request, res: Response) =^> { >> server\routes.ts
-echo     try { >> server\routes.ts
-echo       const menuItems = await storage.getMenuItems(); >> server\routes.ts
-echo       res.json(menuItems); >> server\routes.ts
-echo     } catch (error) { >> server\routes.ts
-echo       res.status(500).json({ message: "Failed to fetch menu items" }); >> server\routes.ts
-echo     } >> server\routes.ts
-echo   }); >> server\routes.ts
-echo. >> server\routes.ts
-echo   const httpServer = createServer(app); >> server\routes.ts
-echo   return httpServer; >> server\routes.ts
-echo } >> server\routes.ts
-echo Routes updated successfully.
-echo.
-
-REM Check if port 3000 is in use using netstat
-echo Checking for port conflicts...
-netstat -ano | findstr :3000 | findstr LISTENING >nul 2>&1
-if %ERRORLEVEL% EQU 0 (
-  echo Port 3000 is already in use. Switching to port 3001...
-  type .env | findstr /v PORT > .env.tmp
-  echo PORT=3001 >> .env.tmp
-  move /y .env.tmp .env >nul
-  echo Application will run on port 3001.
-) else (
-  echo Port 3000 is available.
-)
-
 REM Create database schema and seed data directly using SQL
 echo Creating database schema and seeding data...
 echo -- Create menu_items table > db_init.sql

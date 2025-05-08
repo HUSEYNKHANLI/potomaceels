@@ -95,15 +95,7 @@ export default function CheckoutForm({ onBack, onOrderComplete }: CheckoutFormPr
 
       // Submit the order
       const response = await apiRequest('POST', '/api/orders', orderData);
-      
-      // Safely parse the JSON response
-      let result;
-      try {
-        result = await response.json();
-      } catch (parseError) {
-        console.error('Error parsing response as JSON:', parseError);
-        throw new Error('Server returned an invalid response format. Please try again.');
-      }
+      const result = await response.json();
 
       // Clear the cart and navigate to confirmation
       clearCart();
@@ -111,11 +103,25 @@ export default function CheckoutForm({ onBack, onOrderComplete }: CheckoutFormPr
 
     } catch (error) {
       console.error('Error submitting order:', error);
+      
+      let errorMessage = "There was a problem placing your order. Please try again.";
+      
+      if (error instanceof Error) {
+        // Check for specific error messages from the server
+        if (error.message.includes("Menu item with ID")) {
+          errorMessage = "One or more items in your cart are no longer available. Please refresh the page and try again.";
+        } else if (error.message.includes("Validation error")) {
+          errorMessage = "Please check your information and try again.";
+        } else if (error.message.includes("Server error")) {
+          errorMessage = "The server is currently unavailable. Please try again later.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Order Failed",
-        description: typeof error === 'object' && error !== null && 'message' in error 
-          ? (error as Error).message 
-          : "There was a problem placing your order. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
